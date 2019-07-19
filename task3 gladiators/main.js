@@ -1,5 +1,7 @@
+let id = 0;
 class Gladiator {
     constructor(name,health,power,speed) {
+        this.id = null;
         this.name = name;
         this.health = health;
         this.speed = speed;
@@ -8,6 +10,11 @@ class Gladiator {
         this.initialHealth = health;
         this.timerId = null;
         this.hitOpponent = this.hitOpponent.bind(this);
+        this.generateId();
+    }
+    generateId() {
+        this.id = id;
+        id++;
     }
     hitOpponent() {
         let opponentGladiators = gladiators.filter((gladiator) => {
@@ -22,6 +29,7 @@ class Gladiator {
         }
         print(`[${this.name} x ${this.health}] hits [${randomOpponent.name} x ${randomOpponent.health}] with power ${this.power}`);
         this.timerId = setTimeout(this.hitOpponent, 6000 - this.speed * 1000);
+        updateTable(randomOpponent);
         checkHealth(randomOpponent);
     }
     fight(gladiators) {
@@ -33,16 +41,45 @@ class Gladiator {
 }
 
 let app = document.getElementById('app');
-let scrollHeight = Math.max(
-    document.body.scrollHeight, document.documentElement.scrollHeight,
-    document.body.offsetHeight, document.documentElement.offsetHeight,
-    document.body.clientHeight, document.documentElement.clientHeight
-);
+let table = document.getElementById('table');
+
+function createRow(gladiator) {
+    let tr = document.createElement('tr');
+    tr.classList.add('default');
+    tr.id = gladiator.id;
+    let arr = [gladiator.name, gladiator.health, gladiator.speed, gladiator.power];
+    for (let i = 0; i < 4; i++) {
+        let td = document.createElement('td');
+        td.textContent = arr[i];
+        tr.appendChild(td);
+    }
+    table.appendChild(tr);
+}
+function createTable(gladiators) {
+    table.classList.remove('hidden');
+    app.classList.remove('hidden');
+    for(let i = 0; i < gladiators.length; i++) {
+        createRow(gladiators[i]);
+    }
+}
+function updateTable(gladiator) {
+    let id = gladiator.id;
+    let tr = document.getElementById(id);
+    tr.classList.add('hitten');
+    setTimeout(()=> {
+        tr.classList.remove('hitten');
+    },500);
+    let tds = tr.children;
+    let arr = [gladiator.name, gladiator.health, gladiator.speed, gladiator.power];
+    for(let i = 0; i < 4; i++) {
+        tds[i].textContent = arr[i];
+    }
+}
 function print(txt) {
     let elem = document.createElement('div');
     elem.textContent = txt;
     app.appendChild(elem);
-    window.scrollTo(0, scrollHeight);
+    app.scrollTop = app.scrollHeight;
 }
 
 let countDecimals = function(value) {
@@ -65,12 +102,12 @@ function makeGladiators(quantity) {
         //     enumerable: false,
         //     writable: true
         // });
-        gladiators.push(glad)
+        gladiators.push(glad);
     }
-    return gladiators
+    return gladiators;
 }
 
-let gladiators = makeGladiators(3);
+let gladiators;
 
 //when somebody is dying
 function somebodyDying(gladiator) {
@@ -82,7 +119,7 @@ function somebodyDying(gladiator) {
 //start battle
 function startBattle(gladiators) {
     for(let i = 0; i < gladiators.length; i++) {
-        gladiators[i].fight(gladiators)
+        gladiators[i].fight(gladiators);
     }
 }
 
@@ -115,10 +152,11 @@ function reviveGladiator(gladiator) {
 
 //caesar make decision
 function makeDecision(gladiator, gladiators) {
-    let a = confirm('Finish him??');
+    let a = confirm(`${gladiator.name} is dying!! Finish him??`);
 
     if(a) {
         removeGladiator(gladiators, gladiator);
+        document.getElementById(gladiator.id).classList.add('killed');
         print(`Caesar showed :-1: to [${gladiator.name}]`);
     } else {
         reviveGladiator(gladiator);
@@ -127,11 +165,22 @@ function makeDecision(gladiator, gladiators) {
 
     if(gladiators.length === 1) {
         print(`[${gladiators[0].name}] won the battle with health x${gladiators[0].health}`);
+        document.getElementById(gladiators[0].id).classList.add('winner');
     } else {
         startBattle(gladiators);
     }
 }
 
-function start() {
+function start(quantity) {
+
+    if(quantity === undefined) {
+        quantity = 3;
+    } else if(!parseInt(quantity)) {
+        console.log('Write valid number!');
+        return;
+    }
+    document.getElementById('caution').classList.add('hidden');
+    gladiators = makeGladiators(quantity);
+    createTable(gladiators);
     startBattle(gladiators);
 }
